@@ -77,6 +77,7 @@ impl CPU {
     }
 }
 
+// テスト
 #[cfg(test)]
 mod test {
     use super::*;
@@ -105,5 +106,14 @@ mod test {
         let mut cpu = CPU::new();
         cpu.interpret(vec![0xa9, 0x80, 0x00]);
         assert!(cpu.status & 0b1000_0000 != 0);
+    }
+
+    #[test]
+    // register_xからregister_aにcopyのTAXテスト
+    fn test_0xaa_tax_move_a_to_x() {
+        let mut cpu = CPU::new();
+        cpu.register_a = 10;
+        cpu.interpret(vec![0xaa, 0x00]);
+        assert_eq!(cpu.register_x, 10);
     }
 }
