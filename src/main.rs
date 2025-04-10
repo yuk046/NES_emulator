@@ -1,3 +1,5 @@
+use std::result;
+
 fn main() {
     println!("Hello, world!");
 }
@@ -22,6 +24,32 @@ impl CPU {
         }
     }
 
+    fn lda(&mut self, value: u8) {
+        self.register_a = value;
+        self.update_zero_and_negative_flags(self.register_a);
+    }
+
+    fn tax(&mut self) {
+        self.register_x = self.register_a;
+        self.update_zero_and_negative_flags(self.register_x);
+    }
+
+    // フラグ変更
+    fn update_zero_and_negative_flags(&mut self, result: u8) {
+        // もしresultが0ならzeroフラグを立てる
+        if result == 0 {
+            self.status = self.status | 0b0000_0010;
+        } else {
+            self.status = self.status & 0b1111_1101;
+        }
+        // もしresultの7番目が立っているのならNegativeフラグを立てる
+        if result & 0b1000_0000 != 0 {
+            self.status = self.status | 0b1000_0000;
+        } else {
+            self.status = self.status & 0b0111_1111;
+        }
+    }
+
     // &mut selfつまりこの関数内でオブジェクトの状態を変更できる。 引数としてu8型の列programを取る
     pub fn interpret(&mut self, program: Vec<u8>) {
         self.program_counter = 0;
@@ -36,41 +64,15 @@ impl CPU {
                     // paramはLDAの引数
                     let param = program[self.program_counter as usize];
                     self.program_counter += 1;
-                    self.register_a = param;
 
-                    // もしアキュムレータが0ならzeroフラグを立てる
-                    if self.register_a == 0 {
-                        self.status = self.status | 0b0000_0010;
-                    } else {
-                        self.status = self.status & 0b1111_1101;
-                    }
-                    // もしアキュムレータの7番目が立っているのならNegativeフラグを立てる
-                    if self.register_a & 0b1000_0000 != 0 {
-                        self.status = self.status | 0b1000_0000;
-                    } else {
-                        self.status = self.status & 0b0111_1111;
-                    }
+                    self.lda(param);
                 }
                 // BRK - Loop Break
                 0x00 => {
                     return;
                 }
                 // TAX - Transfer Accumulator to X
-                0xAA => {
-                    self.register_x = self.register_a;
-                    // もしregister_xが0ならzeroフラグを立てる
-                    if self.register_x == 0 {
-                        self.status = self.status | 0b0000_0010;
-                    } else {
-                        self.status = self.status & 0b1111_1101;
-                    }
-                    // もしregister_xの7番目が立っているのならNegativeフラグを立てる
-                    if self.register_x & 0b1000_0000 != 0 {
-                        self.status = self.status | 0b1000_0000;
-                    } else {
-                        self.status = self.status & 0b0111_1111;
-                    }
-                }
+                0xAA => self.tax(),
                 _ => todo!(),
             }
         }
