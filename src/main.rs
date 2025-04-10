@@ -84,7 +84,7 @@ pub struct CPU {
     }
 
     #[test]
-    // zeroフラグが立つLADテスト
+    // negativeフラグが立つLADテスト
     fn test_0xa9_lda_negative_flag() {
         let mut cpu = CPU::new();
         cpu.interpret(vec![0xa9, 0x80, 0x00]);
