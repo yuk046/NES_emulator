@@ -49,7 +49,7 @@ pub struct CPU {
                         self.status = self.status & 0b0111_1111;
                     }
                 }
-                
+
                 // BRK - Loop Break
                 0x00 => {
                     return;
@@ -81,5 +81,13 @@ pub struct CPU {
         let mut cpu = CPU::new();
         cpu.interpret(vec![0xa9, 0x00, 0x00]);
         assert!(cpu.status & 0b0000_0010 == 0b10);
+    }
+
+    #[test]
+    // zeroフラグが立つLADテスト
+    fn test_0xa9_lda_negative_flag() {
+        let mut cpu = CPU::new();
+        cpu.interpret(vec![0xa9, 0x80, 0x00]);
+        assert!(cpu.status & 0b1000_0000 != 0);
     }
  }
