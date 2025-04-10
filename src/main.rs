@@ -5,16 +5,18 @@ fn main() {
 pub struct CPU {
     // CPUのレジスターを定義
     pub register_a: u8,
+    pub register_x: u8,
     pub status: u8,
     pub program_counter: u16,
- }
+}
 
 //  rustでstructの関数を定義する際はimpl内に記述する
- impl CPU {
+impl CPU {
     // コンストラクタを定義 各フィールドを初期化して構造体(self)を返すコンストラクタ
     pub fn new() -> Self {
         CPU {
             register_a: 0,
+            register_x: 0,
             status: 0,
             program_counter: 0,
         }
@@ -25,7 +27,7 @@ pub struct CPU {
         self.program_counter = 0;
 
         loop {
-            let  opscode = program[self.program_counter as usize];
+            let opscode = program[self.program_counter as usize];
             self.program_counter += 1;
 
             match opscode {
@@ -49,20 +51,34 @@ pub struct CPU {
                         self.status = self.status & 0b0111_1111;
                     }
                 }
-
                 // BRK - Loop Break
                 0x00 => {
                     return;
                 }
+                // TAX - Transfer Accumulator to X
+                0xAA => {
+                    self.register_x = self.register_a;
+                    // もしregister_xが0ならzeroフラグを立てる
+                    if self.register_x == 0 {
+                        self.status = self.status | 0b0000_0010;
+                    } else {
+                        self.status = self.status & 0b1111_1101;
+                    }
+                    // もしregister_xの7番目が立っているのならNegativeフラグを立てる
+                    if self.register_x & 0b1000_0000 != 0 {
+                        self.status = self.status | 0b1000_0000;
+                    } else {
+                        self.status = self.status & 0b0111_1111;
+                    }
+                }
                 _ => todo!(),
             }
         }
-    } 
- }
+    }
+}
 
-
- #[cfg(test)]
- mod test {
+#[cfg(test)]
+mod test {
     use super::*;
 
     #[test]
@@ -90,4 +106,4 @@ pub struct CPU {
         cpu.interpret(vec![0xa9, 0x80, 0x00]);
         assert!(cpu.status & 0b1000_0000 != 0);
     }
- }
+}
