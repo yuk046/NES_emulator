@@ -1,16 +1,19 @@
+NOW
+CPUの命令実装（アドレッシングモード）
 
-Writing NES Emulator in Rust
+Based on　"Writing NES Emulator in Rust"
+https://bugzmanov.github.io/nes_ebook/
 
 CPU Registers
 
-・Program Counter (PC) - holds the address for the next machine language instruction to be executed.
+・Program Counter (PC) - 次に実行される機械語命令のアドレスを保持します。
 
-・Stack Pointer - Memory space [0x0100 .. 0x1FF] is used for stack. The stack pointer holds the address of the top of that space. NES Stack (as all stacks) grows from top to bottom: when a byte gets pushed to the stack, SP register decrements. When a byte is retrieved from the stack, SP register increments.
+・Stack Pointer - メモリ領域 [0x0100 .. 0x01FF] はスタックとして使用されます。スタックポインタはそのスタックの一番上のアドレスを保持します。NESのスタック（他の多くのスタックと同様に）は上から下へ成長します。つまり、バイトがスタックにプッシュされるとSPレジスタはデクリメント（減少）し、バイトがスタックから取得されるとSPレジスタはインクリメント（増加）します。
 
-・Accumulator (A) - stores the results of arithmetic, logic, and memory access operations. It used as an input parameter for some operations.
+・Accumulator (A) - 算術、論理、メモリアクセスの結果を保持します。また、いくつかの命令において入力パラメータとしても使用されます。
 
-・Index Register X (X) - used as an offset in specific memory addressing modes (more on this later). Can be used for auxiliary storage needs (holding temp values, being used as a counter, etc.)
+・Index Register X (X) - 特定のメモリアドレッシングモードにおいてオフセットとして使用されます。また、一時的な値を保持したり、カウンターとして使用されるなど、補助的な目的にも使用されます。
 
-・Index Register Y (Y) - similar use cases as register X.
+・Index Register Y (Y) - Xレジスタと同様に、上記のような用途で使用されます。
 
-・Processor status (P) - 8-bit register represents 7 status flags that can be set or unset depending on the result of the last executed instruction (for example Z flag is set (1) if the result of an operation is 0, and is unset/erased (0) otherwise)
+・Processor status (P) - 8ビットのレジスタで、命令の実行結果に応じて設定・解除される7つのステータスフラグを表します（たとえば、Zフラグは演算結果が0であればセット（1）され、それ以外の場合はリセット（0）されます）。

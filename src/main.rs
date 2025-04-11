@@ -24,17 +24,29 @@ impl CPU {
         }
     }
 
+    // 引数で取った値をアキュムレータに格納
     fn lda(&mut self, value: u8) {
         self.register_a = value;
         self.update_zero_and_negative_flags(self.register_a);
     }
 
+    // アキュムレータの値をregister_xにコピー
     fn tax(&mut self) {
         self.register_x = self.register_a;
         self.update_zero_and_negative_flags(self.register_x);
     }
 
-    // フラグ変更
+    // register_xをインクリメント
+    fn inx(&mut self) {
+        if self.register_x == 0b1111_1111 {
+            self.register_x = 0;
+        } else {
+            self.register_x += 1;
+        }
+        self.update_zero_and_negative_flags(self.register_x);
+    }
+
+    // ゼロフラグとネガティブフラグ変更
     fn update_zero_and_negative_flags(&mut self, result: u8) {
         // もしresultが0ならzeroフラグを立てる
         if result == 0 {
@@ -73,11 +85,13 @@ impl CPU {
                 }
                 // TAX - Transfer Accumulator to X
                 0xAA => self.tax(),
+                0xe8 => self.inx(),
                 _ => todo!(),
             }
         }
     }
 }
+
 
 // テスト
 #[cfg(test)]
@@ -118,4 +132,22 @@ mod test {
         cpu.interpret(vec![0xaa, 0x00]);
         assert_eq!(cpu.register_x, 10);
     }
+
+    // 結合テスト
+    #[test]
+    fn test_5_ops_working_together() {
+        let mut cpu = CPU::new();
+        cpu.interpret(vec![0xa9, 0xc0, 0xaa, 0xe8, 0x00]);
+        assert_eq!(cpu.register_x, 0xc1)
+    }
+
+    // register_xのオーバーフローテスト
+    #[test]
+    fn test_inx_overflow() {
+        let mut cpu = CPU::new();
+        cpu.register_x = 0xff;
+        cpu.interpret(vec![0xe8, 0xe8, 0x00]);
+        assert_eq!(cpu.register_x, 1)
+    }
+
 }
