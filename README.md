@@ -21,5 +21,5 @@ CPU Registers
 アドレッシングモード
 
 ・Immediate - 直接値を指定する
-・Zero Page - 値の参照先が決まっている
+・Zero Page - 値はアドレス参照1byte($00～$FF)の場合
 ・Absolute - 値はアドレス参照
