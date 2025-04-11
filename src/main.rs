@@ -10,6 +10,7 @@ pub struct CPU {
     pub register_x: u8,
     pub status: u8,
     pub program_counter: u16,
+    memory: [u8; 0xFFFF]
 }
 
 //  rustでstructの関数を定義する際はimpl内に記述する
@@ -21,6 +22,52 @@ impl CPU {
             register_x: 0,
             status: 0,
             program_counter: 0,
+            memory: [0x00;0xFFFF],
+        }
+    }
+
+    // memory番地を受け取り格納値を返す
+    fn mem_read(&self, addr: u16) -> u8 {
+        self.memory[addr as usize]
+    }   
+    // memory番地とdateを受け取り、番地に値を格納する
+    fn mem_write(&mut self, addr: u16, date: u8) {
+        self.memory[addr as usize] = date;
+    }
+    // programを受け取りメモリの 0x8000 番地からroadして実行
+    pub fn load_and_run(&mut self, program: Vec<u8>) {
+        self.load(program);
+        self.run()
+    }
+    // プログラムのバイト列を、メモリの 0x8000 番地から書き込んで、そこから実行開始するようにPCをセットする
+    pub fn load(&mut self, program: Vec<u8>) {
+        self.memory[0x8000 .. (0x8000 + program.len())].copy_from_slice(&program[..]);
+        self.program_counter = 0x8000;
+    }
+    // メモリの 0x8000 番地からopscode読み込んで実行
+    pub fn run(&mut self) {
+        loop {
+            let opscode = self.mem_read(self.program_counter);
+            self.program_counter += 1;
+
+            match opscode {
+                // LDA - Load Accumulator
+                0xA9 => {
+                    // paramはLDAの引数
+                    let param = self.mem_read(self.program_counter);
+                    self.program_counter += 1;
+
+                    self.lda(param);
+                }
+                // BRK - Loop Break
+                0x00 => {
+                    return;
+                }
+                // TAX - Transfer Accumulator to X
+                0xAA => self.tax(),
+                0xe8 => self.inx(),
+                _ => todo!(),
+            }
         }
     }
 
@@ -65,30 +112,6 @@ impl CPU {
     // &mut selfつまりこの関数内でオブジェクトの状態を変更できる。 引数としてu8型の列programを取る
     pub fn interpret(&mut self, program: Vec<u8>) {
         self.program_counter = 0;
-
-        loop {
-            let opscode = program[self.program_counter as usize];
-            self.program_counter += 1;
-
-            match opscode {
-                // LDA - Load Accumulator
-                0xA9 => {
-                    // paramはLDAの引数
-                    let param = program[self.program_counter as usize];
-                    self.program_counter += 1;
-
-                    self.lda(param);
-                }
-                // BRK - Loop Break
-                0x00 => {
-                    return;
-                }
-                // TAX - Transfer Accumulator to X
-                0xAA => self.tax(),
-                0xe8 => self.inx(),
-                _ => todo!(),
-            }
-        }
     }
 }
 
