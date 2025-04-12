@@ -401,4 +401,17 @@ mod test {
         assert_eq!(cpu.register_x, 0x00); // wrap around
         assert!(cpu.status & 0b0000_0010 != 0); // Zero flag should be set
     }
+
+    // staテスト
+    #[test]
+    fn test_sta_from_memory() {
+        let mut cpu = CPU::new();
+        cpu.load(vec![0x85, 0x10, 0x00]);
+        cpu.reset();
+        cpu.register_a = 0xBA;
+        cpu.run();
+
+        assert_eq!(cpu.mem_read(0x10), 0xBA); // wrap around
+    }
+    
 }
