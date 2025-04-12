@@ -271,7 +271,7 @@ mod test {
 
     #[test]
     // フラグが立たないLDAテスト
-    fn test_0xa9_lda_immediate_load_data() {
+    fn test_lda_immediate_load_data() {
         let mut cpu = CPU::new();
         cpu.load_and_run(vec![0xa9, 0x05, 0x00]);
         assert_eq!(cpu.register_a, 0x05);
@@ -281,7 +281,7 @@ mod test {
 
     #[test]
     // zeroフラグが立つLADテスト
-    fn test_0xa9_lda_zero_flag() {
+    fn test_lda_zero_flag() {
         let mut cpu = CPU::new();
         cpu.load_and_run(vec![0xa9, 0x00, 0x00]);
         assert!(cpu.status & 0b0000_0010 == 0b10);
@@ -289,15 +289,97 @@ mod test {
 
     #[test]
     // negativeフラグが立つLADテスト
-    fn test_0xa9_lda_negative_flag() {
+    fn test_lda_negative_flag() {
         let mut cpu = CPU::new();
         cpu.load_and_run(vec![0xa9, 0x80, 0x00]);
         assert!(cpu.status & 0b1000_0000 != 0);
     }
+    // lda_zero_page
+    #[test]
+    fn test_lda_from_memory_zero_page() {
+        let mut cpu = CPU::new();
+        cpu.mem_write(0x10, 0x55);
+        cpu.load_and_run(vec![0xa5, 0x10, 0x00]);
+
+        assert_eq!(cpu.register_a, 0x55);
+    }
+    // lda_zero_page_x
+    #[test]
+    fn test_lda_from_memory_zero_page_x() {
+        let mut cpu = CPU::new();
+        cpu.load(vec![0xb5, 0x10, 0x00]);
+        cpu.reset();
+        cpu.mem_write(0x11, 0x55);
+        cpu.register_x = 0x01;
+        cpu.run();
+
+        assert_eq!(cpu.register_a, 0x55);
+    }
+    // lda_absolute
+    #[test]
+    fn test_lda_from_memory_absolute() {
+        let mut cpu = CPU::new();
+        cpu.load(vec![0xad, 0x10, 0xaa, 0x00]);
+        cpu.reset();
+        cpu.mem_write(0xaa10, 0x57);
+        cpu.run();
+
+        assert_eq!(cpu.register_a, 0x57);
+    }
+    // lda_absolute_x
+    #[test]
+    fn test_lda_from_memory_absolute_x() {
+        let mut cpu = CPU::new();
+        cpu.load(vec![0xbd, 0x10, 0xaa, 0x00]);
+        cpu.reset();
+        cpu.mem_write(0xaa15, 0x58);
+        cpu.register_x = 0x05;
+        cpu.run();
+
+        assert_eq!(cpu.register_a, 0x58);
+    }
+    // lda_absolute_y
+    #[test]
+    fn test_lda_from_memory_absolute_y() {
+        let mut cpu = CPU::new();
+        cpu.load(vec![0xb9, 0x10, 0xaa, 0x00]);
+        cpu.reset();
+        cpu.mem_write(0xaa16, 0x59);
+        cpu.register_y = 0x06;
+        cpu.run();
+
+        assert_eq!(cpu.register_a, 0x59);
+    }
+    // lda_indirect_x
+    #[test]
+    fn test_lda_from_memory_indirect_x() {
+        let mut cpu = CPU::new();
+        cpu.load(vec![0xa1, 0x10, 0x00]);
+        cpu.reset();
+        cpu.mem_write_u16(0x16, 0xFF05);
+        cpu.mem_write(0xFF05, 0x5A);
+        cpu.register_x = 0x06;
+        cpu.run();
+
+        assert_eq!(cpu.register_a, 0x5A);
+    }
+    // lda_indirect_y
+    #[test]
+    fn test_lda_from_memory_indirect_y() {
+        let mut cpu = CPU::new();
+        cpu.load(vec![0xb1, 0x10, 0x00]);
+        cpu.reset();
+        cpu.mem_write_u16(0x10, 0xFF06);
+        cpu.mem_write(0xFF09, 0x5B);
+        cpu.register_y = 0x03;
+        cpu.run();
+
+        assert_eq!(cpu.register_a, 0x5B);
+    }
 
     #[test]
     // register_xからregister_aにcopyのTAXテスト
-    fn test_0xaa_tax_move_a_to_x() {
+    fn test_tax_move_a_to_x() {
         let mut cpu = CPU::new();
         cpu.load_and_run(vec![0xa9, 0x0A, 0xAA, 0x00]);
         assert_eq!(cpu.register_x, 0x0A);
@@ -313,19 +395,10 @@ mod test {
 
     // register_xのオーバーフローテスト
     #[test]
-    fn test_0xe8_inx_overflow() {
+    fn test_inx_overflow() {
         let mut cpu = CPU::new();
         cpu.load_and_run(vec![0xa9, 0xff, 0xaa, 0xe8, 0x00]); // LDA #$FF, TAX, INX, BRK
         assert_eq!(cpu.register_x, 0x00); // wrap around
         assert!(cpu.status & 0b0000_0010 != 0); // Zero flag should be set
-    }
-
-    #[test]
-    fn test_lda_from_memory() {
-        let mut cpu = CPU::new();
-        cpu.mem_write(0x10, 0x55);
-        cpu.load_and_run(vec![0xa5, 0x10, 0x00]);
-
-        assert_eq!(cpu.register_a, 0x55);
     }
 }
