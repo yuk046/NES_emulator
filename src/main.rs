@@ -4,8 +4,8 @@ fn main() {
     println!("Hello, world!");
 }
 
-#[derive(Debug)]
-#[allow(non_camel_case_types)]
+#[derive(Debug)] //debugの書式指定を利用するために
+#[allow(non_camel_case_types)] //キャメルケース以外を利用する
 pub enum AddressingMode {
     Immediate,
     ZeroPage,
@@ -150,11 +150,36 @@ impl CPU {
             match opscode {
                 // LDA - Load Accumulator
                 0xA9 => {
-                    // paramはLDAの引数
-                    let param = self.mem_read(self.program_counter);
+                    self.lda(&AddressingMode::Immediate);
                     self.program_counter += 1;
-
-                    self.lda(param);
+                }
+                0xA5 => {
+                    self.lda(&AddressingMode::ZeroPage);
+                    self.program_counter += 1;
+                }
+                0xB5 => {
+                    self.lda(&AddressingMode::ZeroPage_X);
+                    self.program_counter += 1;
+                }
+                0xAD => {
+                    self.lda(&AddressingMode::Absolute);
+                    self.program_counter += 2;
+                }
+                0xBD => {
+                    self.lda(&AddressingMode::Absolute_X);
+                    self.program_counter += 2;
+                }
+                0xB9 => {
+                    self.lda(&AddressingMode::Absolute_Y);
+                    self.program_counter += 2;
+                }
+                0xA1 => {
+                    self.lda(&AddressingMode::Indirect_X);
+                    self.program_counter += 1;
+                }
+                0xB1 => {
+                    self.lda(&AddressingMode::Indirect_Y);
+                    self.program_counter += 1;
                 }
                 // BRK - Loop Break
                 0x00 => {
@@ -169,7 +194,9 @@ impl CPU {
     }
 
     // 引数で取った値をアキュムレータに格納
-    fn lda(&mut self, value: u8) {
+    fn lda(&mut self, mode: &AddressingMode) {
+        let addr = self.get_operand_address(mode);
+        let value = self.mem_read(addr);
         self.register_a = value;
         self.update_zero_and_negative_flags(self.register_a);
     }
@@ -182,11 +209,7 @@ impl CPU {
 
     // register_xをインクリメント
     fn inx(&mut self) {
-        if self.register_x == 0b1111_1111 {
-            self.register_x = 0;
-        } else {
-            self.register_x += 1;
-        }
+        self.register_x = self.register_x.wrapping_add(1);
         self.update_zero_and_negative_flags(self.register_x);
     }
 
@@ -208,7 +231,7 @@ impl CPU {
 }
 
 // テスト
-#[cfg(test)]
+#[cfg(test)] //条件付きコンパイルを利用する
 mod test {
     use super::*;
 

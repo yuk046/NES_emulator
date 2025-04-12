@@ -1,7 +1,7 @@
 # NESエミュレータ開発メモ（Rust）
 
 ## 現在の進捗
-- ✅ CPUの命令実装（アドレッシングモード）完了
+- ✅ CPUの命令実装（アドレッシングモード）実装中
 
 ## based on
 - 📘 [Writing NES Emulator in Rust](https://bugzmanov.github.io/nes_ebook/)
