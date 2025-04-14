@@ -224,6 +224,7 @@ impl CPU {
         }
     }
 
+    // アキュムレータにaddしcもaddする。
     fn adc(&mut self, mode: &AddressingMode){
         let addr = self.get_operand_address(mode);
         let value = self.mem_read(addr);
@@ -232,15 +233,18 @@ impl CPU {
         let (rhs,carry_flag1) = value.overflowing_add(carry);
         let (n, carry_flag2) = self.register_a.overflowing_add(rhs);
 
+        // 加算する前に最上位ビットが同じだったのに、演算後変化した際。符号overflow
         let overflow = (self.register_a & 0x80) == (value & 0x80) && (value & 0x80) != (n & 0x80);
 
         self.register_a = n;
 
+        // bit_overflow
         self.status = if carry_flag1 || carry_flag2 {
             self.status | 0x01
         } else {
             self.status & 0xFE
         };
+        // 符号overflow
         self.status = if overflow {
             self.status | 0x40
         } else {
