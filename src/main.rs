@@ -148,6 +148,10 @@ impl CPU {
             self.program_counter += 1;
 
             match opscode {
+                0x69 => {
+                    self.adc(&AddressingMode::Immediate);
+                    self.program_counter += 1;
+                }
                 /* LDA */ 
                 0xA9 => {
                     self.lda(&AddressingMode::Immediate);
@@ -234,7 +238,8 @@ impl CPU {
         let (n, carry_flag2) = self.register_a.overflowing_add(rhs);
 
         // 加算する前に最上位ビットが同じだったのに、演算後変化した際。符号overflow
-        let overflow = (self.register_a & 0x80) == (value & 0x80) && (value & 0x80) != (n & 0x80);
+        let overflow = (self.register_a & 0x80) == (value & 0x80) &&
+                                (value & 0x80) != (n & 0x80);
 
         self.register_a = n;
 
@@ -442,7 +447,114 @@ mod test {
         cpu.register_a = 0xBA;
         cpu.run();
 
-        assert_eq!(cpu.mem_read(0x10), 0xBA); // wrap around
+        assert_eq!(cpu.mem_read(0x10), 0xBA);
+    }
+
+    /* ADC */
+    #[test]
+    // 単純な足し算A+C(0)+M
+        fn test_adc_no_carry() {
+        let mut cpu = CPU::new();
+        cpu.load(vec![0x69, 0x10, 0x00]);
+        cpu.reset();
+        cpu.register_a = 0x20;
+        cpu.run();
+
+        assert_eq!(cpu.register_a, 0x30); 
+        assert_eq!(cpu.status,0x00); //変化しない
+    }
+    #[test]
+    // 単純な足し算A+C(1)+M
+        fn test_adc_has_carry() {
+        let mut cpu = CPU::new();
+        cpu.load(vec![0x69, 0x10, 0x00]);
+        cpu.reset();
+        cpu.register_a = 0x20;
+        cpu.status = 0x01; //carryフラグが立った状態でテスト
+        cpu.run();
+
+        assert_eq!(cpu.register_a, 0x31); 
+        assert_eq!(cpu.status,0x00); //carryフラグが消滅する
+    }
+
+    #[test]
+    // overflow&zero+carryフラグが立つ
+        fn test_adc_occur_carry() {
+        let mut cpu = CPU::new();
+        cpu.load(vec![0x69, 0x01, 0x00]);
+        cpu.reset();
+        cpu.register_a = 0xFF;
+        cpu.run();
+
+        assert_eq!(cpu.register_a, 0x00); 
+        assert_eq!(cpu.status,0x03); //zero + carryフラグが立つ
+    }
+
+    #[test]
+    // overflow&zero+carryフラグが立つ
+        fn test_adc_occur_overflow_plus() {
+        let mut cpu = CPU::new();
+        cpu.load(vec![0x69, 0x10, 0x00]);
+        cpu.reset();
+        cpu.register_a = 0x7F;
+        cpu.run();
+
+        assert_eq!(cpu.register_a, 0x8F); 
+        assert_eq!(cpu.status,0xC0); //overflow+negativeフラグが立つ
+    }
+
+    #[test]
+    // carryを足してoverflowになる。
+        fn test_adc_occur_overflow_plus_with_carry() {
+        let mut cpu = CPU::new();
+        cpu.load(vec![0x69, 0x10, 0x00]);
+        cpu.reset();
+        cpu.register_a = 0x6F;
+        cpu.status = 0x01;
+        cpu.run();
+
+        assert_eq!(cpu.register_a, 0x80); 
+        assert_eq!(cpu.status,0xC0); //overflow+negativeフラグが立つ
+    }
+
+    #[test]
+    // carryを足してoverflowになる。
+        fn test_adc_occur_overflow_minus() {
+        let mut cpu = CPU::new();
+        cpu.load(vec![0x69, 0x81, 0x00]);
+        cpu.reset();
+        cpu.register_a = 0x81;
+        cpu.run();
+
+        assert_eq!(cpu.register_a, 0x02); 
+        assert_eq!(cpu.status,0x41); //overflow+carryフラグが立つ
+    }
+
+    #[test]
+    // carryを足してoverflowになる。
+        fn test_adc_occur_overflow_minus_with_carry() {
+        let mut cpu = CPU::new();
+        cpu.load(vec![0x69, 0x80, 0x00]);
+        cpu.reset();
+        cpu.register_a = 0x80;
+        cpu.status = 0x01;
+        cpu.run();
+
+        assert_eq!(cpu.register_a, 0x01); 
+        assert_eq!(cpu.status,0x41); //overflow+carryフラグが立つ
+    }
+
+    #[test]
+    // 符号が違う足し算のoverflow
+        fn test_adc_occur_no_overflow() {
+        let mut cpu = CPU::new();
+        cpu.load(vec![0x69, 0x7F, 0x00]);
+        cpu.reset();
+        cpu.register_a = 0x82;
+        cpu.run();
+
+        assert_eq!(cpu.register_a, 0x01); 
+        assert_eq!(cpu.status,0x01); //carryフラグが立つ
     }
     
 }
