@@ -5,7 +5,8 @@
 
 ## based on
 - 📘 [Writing NES Emulator in Rust](https://bugzmanov.github.io/nes_ebook/)
-- obelisk-6502-guide (https://www.nesdev.org/obelisk-6502-guide/)
+- [obelisk-6502-guide](https://www.nesdev.org/obelisk-6502-guide/)
+- [Easy 6502(AssemblyLanguageTest)](https://skilldrick.github.io/easy6502/)
 
 ---
 
