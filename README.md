@@ -1,10 +1,11 @@
 # NESエミュレータ開発メモ（Rust）
 
 ## 現在の進捗
-- ✅ CPUの命令実装（アドレッシングモード）実装中
+- ✅ CPUの命令実装（アドレッシングモード）
 
 ## based on
 - 📘 [Writing NES Emulator in Rust](https://bugzmanov.github.io/nes_ebook/)
+- obelisk-6502-guide (https://www.nesdev.org/obelisk-6502-guide/)
 
 ---
 
