@@ -152,6 +152,10 @@ impl CPU {
                     self.adc(&AddressingMode::Immediate);
                     self.program_counter += 1;
                 }
+                0xE9 => {
+                    self.sbc(&AddressingMode::Immediate);
+                    self.program_counter += 1;
+                }
                 /* LDA */ 
                 0xA9 => {
                     self.lda(&AddressingMode::Immediate);
@@ -257,7 +261,38 @@ impl CPU {
         };
 
         self.update_zero_and_negative_flags(self.register_a);
+    }
 
+    // アキュムレータから減算しcも減算する。
+    fn sbc(&mut self, mode: &AddressingMode) {
+        // A-M-(1-C)
+        let addr = self.get_operand_address(mode);
+        let value = self.mem_read(addr);
+
+        let carry = self.status & 0x01;
+        let (v1,carry_flag1) = self.register_a.overflowing_sub(value);
+        let (n, carry_flag2) = v1.overflowing_sub(1 - carry);
+
+        // 加算する前に最上位ビットが違った際に、演算後変化した際。符号overflow
+        let overflow = (self.register_a & 0x80) != (value & 0x80) &&
+                                (self.register_a & 0x80) != (n & 0x80);
+
+        self.register_a = n;
+
+        // bit_overflow
+        self.status = if !carry_flag1 || !carry_flag2 {
+            self.status | 0x01
+        } else {
+            self.status & !0xFE
+        };
+        // 符号overflow
+        self.status = if overflow {
+            self.status | 0x40
+        } else {
+            self.status & 0xBF
+        };
+
+        self.update_zero_and_negative_flags(self.register_a);
     }
 
     // 引数で取った値をアキュムレータに格納
