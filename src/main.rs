@@ -280,10 +280,10 @@ impl CPU {
         self.register_a = n;
 
         // bit_overflow
-        self.status = if !carry_flag1 || !carry_flag2 {
+        self.status = if !carry_flag1 && !carry_flag2 {
             self.status | 0x01
         } else {
-            self.status & !0xFE
+            self.status & 0xFE
         };
         // 符号overflow
         self.status = if overflow {
@@ -591,5 +591,85 @@ mod test {
         assert_eq!(cpu.register_a, 0x01); 
         assert_eq!(cpu.status,0x01); //carryフラグが立つ
     }
-    
+
+    /* SBC */
+    #[test]
+        fn test_sbc_no_carry() {
+        let mut cpu = CPU::new();
+        cpu.load(vec![0xe9, 0x10, 0x00]);
+        cpu.reset();
+        cpu.register_a = 0x20;
+        cpu.run();
+
+        assert_eq!(cpu.register_a, 0x0F); 
+        // carry判定でなければcarryフラグが立つ
+        assert_eq!(cpu.status,0x01); 
+    }
+
+    #[test]
+        fn test_sbc_has_carry() {
+        let mut cpu = CPU::new();
+        cpu.load(vec![0xe9, 0x10, 0x00]);
+        cpu.reset();
+        cpu.register_a = 0x20;
+        cpu.status = 0x01;
+        cpu.run();
+
+        assert_eq!(cpu.register_a, 0x10); 
+        assert_eq!(cpu.status,0x01); 
+    }
+
+    #[test]
+        fn test_sbc_occur_carry() {
+        let mut cpu = CPU::new();
+        cpu.load(vec![0xe9, 0x02, 0x00]);
+        cpu.reset();
+        cpu.register_a = 0x01;
+        cpu.run();
+
+        assert_eq!(cpu.register_a, 0xFE); 
+        // negativeが立つ
+        assert_eq!(cpu.status,0x80); 
+    }
+
+    #[test]
+        fn test_sbc_occur_overflow() {
+        let mut cpu = CPU::new();
+        cpu.load(vec![0xe9, 0x81, 0x00]);
+        cpu.reset();
+        cpu.register_a = 0x7F;
+        cpu.run();
+
+        assert_eq!(cpu.register_a, 0xFD); 
+        // negative+overflowが立つ
+        assert_eq!(cpu.status,0xC0); 
+    }
+
+    #[test]
+        fn test_sbc_occur_overflow_with_carry() {
+        let mut cpu = CPU::new();
+        cpu.load(vec![0xe9, 0x81, 0x00]);
+        cpu.reset();
+        cpu.register_a = 0x7F;
+        cpu.status = 0x01;
+        cpu.run();
+
+        assert_eq!(cpu.register_a, 0xFE); 
+        // negative+overflowが立つ
+        assert_eq!(cpu.status,0xC0); 
+    }
+
+    #[test]
+        fn test_sbc_no_overflow() {
+        let mut cpu = CPU::new();
+        cpu.load(vec![0xe9, 0x7F, 0x00]);
+        cpu.reset();
+        cpu.register_a = 0x7E;
+        cpu.status = 0x01;
+        cpu.run();
+
+        assert_eq!(cpu.register_a, 0xFF); 
+        // negativeが立つ
+        assert_eq!(cpu.status,0x80); 
+    } 
 }
