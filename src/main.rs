@@ -1,5 +1,3 @@
-use std::{ops::Add, result};
-
 fn main() {
     println!("Hello, world!");
 }
@@ -250,13 +248,13 @@ impl CPU {
         self.status = if carry_flag1 || carry_flag2 {
             self.status | 0x01
         } else {
-            self.status & 0xFE
+            self.status & !0x01
         };
         // 符号overflow
         self.status = if overflow {
             self.status | 0x40
         } else {
-            self.status & 0xBF
+            self.status & !0x40
         };
 
         self.update_zero_and_negative_flags(self.register_a);
@@ -282,13 +280,13 @@ impl CPU {
         self.status = if !carry_flag1 && !carry_flag2 {
             self.status | 0x01
         } else {
-            self.status & 0xFE
+            self.status & !0x01
         };
         // 符号overflow
         self.status = if overflow {
             self.status | 0x40
         } else {
-            self.status & 0xBF
+            self.status & !0x40
         };
 
         self.update_zero_and_negative_flags(self.register_a);
